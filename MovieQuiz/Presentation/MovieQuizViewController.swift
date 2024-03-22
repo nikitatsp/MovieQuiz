@@ -72,7 +72,15 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
             let message = "Ваш результат: \(correctAnswers)/10"
-            let viewModel = AlertModel(title: "Этот раунд окончен!", message: message, buttonText: "Сыграть ещё раз")
+            let viewModel = AlertModel(title: "Раунд окончен", message: message, buttonText: "Начать еще раз", closure: {
+                
+                self.currentQuestionIndex = 0
+                self.correctAnswers = 0
+                self.noButton.isEnabled = true
+                self.yesButton.isEnabled = true
+                self.imageView.layer.borderColor = UIColor.clear.cgColor
+                self.questionFactory?.requestNextQuestion()
+            })
             alertPresenter?.show(quiz: viewModel)
             
         } else {

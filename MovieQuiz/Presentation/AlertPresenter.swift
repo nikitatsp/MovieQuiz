@@ -14,8 +14,8 @@ class AlertPresenter: AlertPresenterProtocol {
             message: result.message,
             preferredStyle: .alert)
         
-        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak delegate] _ in
-            delegate?.didDismissAlert()
+        let action = UIAlertAction(title: result.buttonText, style: .default) {_ in
+            result.closure()
         }
         
         alert.addAction(action)
