@@ -1,10 +1,11 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
+final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, AlertPresenterDelegate {
     
     private let questionsAmount: Int = 10
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
+    private var alertPresenter: AlertPresenterProtocol?
     
     private var currentQuestionIndex = 0
     private var correctAnswers = 0
@@ -20,6 +21,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         imageView.layer.cornerRadius = 20
         
         questionFactory = QuestionFactory(delegate: self)
+        alertPresenter = AlertPresenter(delegate: self)
         
         questionFactory?.requestNextQuestion()
     }
@@ -34,6 +36,19 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         DispatchQueue.main.async { [weak self] in
             self?.show(quiz: viewModel)
         }
+    }
+    
+    func didDismissAlert() {
+            currentQuestionIndex = 0
+            correctAnswers = 0
+            noButton.isEnabled = true
+            yesButton.isEnabled = true
+            imageView.layer.borderColor = UIColor.clear.cgColor
+            questionFactory?.requestNextQuestion()
+        }
+    
+    func showAlert(alert: UIAlertController) {
+        self.present(alert, animated: true, completion: nil)
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -56,12 +71,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
-            let text = "Ваш результат: \(correctAnswers)/10"
-            let viewModel = QuizResultsViewModel(
-                title: "Этот раунд окончен!",
-                text: text,
-                buttonText: "Сыграть ещё раз")
-            show(quiz: viewModel)
+            let message = "Ваш результат: \(correctAnswers)/10"
+            let viewModel = AlertModel(title: "Этот раунд окончен!", message: message, buttonText: "Сыграть ещё раз")
+            alertPresenter?.show(quiz: viewModel)
+            
         } else {
             noButton.isEnabled = true
             yesButton.isEnabled = true
