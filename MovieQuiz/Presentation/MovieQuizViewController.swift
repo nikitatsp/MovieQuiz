@@ -38,15 +38,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
     }
     
-    func didDismissAlert() {
-            currentQuestionIndex = 0
-            correctAnswers = 0
-            noButton.isEnabled = true
-            yesButton.isEnabled = true
-            imageView.layer.borderColor = UIColor.clear.cgColor
-            questionFactory?.requestNextQuestion()
-        }
-    
     func showAlert(alert: UIAlertController) {
         self.present(alert, animated: true, completion: nil)
     }
