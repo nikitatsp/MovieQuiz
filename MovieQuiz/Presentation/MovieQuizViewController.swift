@@ -71,18 +71,18 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         if currentQuestionIndex == questionsAmount - 1 {
             
             statisticService?.store(correct: correctAnswers, total: questionsAmount)
-            guard var totalAccuracy = statisticService?.totalAccuracy else {
+            guard let totalAccuracy = statisticService?.totalAccuracy else {
                 return
             }
-            guard var gamesCount = statisticService?.gamesCount else {
+            guard let gamesCount = statisticService?.gamesCount else {
                 return
             }
-            guard var bestGame = statisticService?.bestGame else {
+            guard let bestGame = statisticService?.bestGame else {
                 return
             }
-            var recordString = "\(bestGame.correct)/\(bestGame.total) \(bestGame.dateFormatter())"
+            let recordString = "\(bestGame.correct)/\(bestGame.total) (\(bestGame.dateFormatter()))"
             
-            let message = "Ваш результат: \(correctAnswers)/10 \nКоличество сыгранных квизов: \(gamesCount) \nРекорд: \(recordString) \nСредняя точность: \(totalAccuracy)"
+            let message = "Ваш результат: \(correctAnswers)/10 \nКоличество сыгранных квизов: \(gamesCount) \nРекорд: \(recordString) \nСредняя точность: \(NSString(format:"%.2f", totalAccuracy))%"
             let viewModel = AlertModel(title: "Раунд окончен", message: message, buttonText: "Начать еще раз", closure: { [weak self] in
                 
                 self?.currentQuestionIndex = 0

@@ -12,7 +12,7 @@ final class StatisticServiceImplementation: StatisticService {
     func store(correct count: Int, total amount: Int) {
         var correctCount = userDefaults.integer(forKey: Keys.correct.rawValue)
         var totalCount = userDefaults.integer(forKey: Keys.total.rawValue)
-        var resultGame = GameRecord(correct: count, total: amount, date: Date())
+        let resultGame = GameRecord(correct: count, total: amount, date: Date())
         
         correctCount += count
         totalCount += amount
@@ -27,8 +27,8 @@ final class StatisticServiceImplementation: StatisticService {
         correctCount = userDefaults.integer(forKey: Keys.correct.rawValue)
         totalCount = userDefaults.integer(forKey: Keys.total.rawValue)
         
-        var value1 = Double(correctCount)
-        var value2 = Double(totalCount)
+        let value1 = Double(correctCount)
+        let value2 = Double(totalCount)
         
         totalAccuracy = (value1 / value2)*100
         
