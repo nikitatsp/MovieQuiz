@@ -6,6 +6,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
+    private var statisticService: StatisticService?
     
     private var currentQuestionIndex = 0
     private var correctAnswers = 0
@@ -17,6 +18,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     @IBOutlet private var yesButton: UIButton!
     
     override func viewDidLoad() {
+        
+        print(NSHomeDirectory())
+        UserDefaults.standard.set(true, forKey: "viewDidLoad")
+        
         super.viewDidLoad()
         imageView.layer.cornerRadius = 20
         
@@ -24,6 +29,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         alertPresenter = AlertPresenter(delegate: self)
         
         questionFactory?.requestNextQuestion()
+        
+        statisticService = StatisticServiceImplementation()
     }
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
@@ -62,7 +69,20 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
-            let message = "Ваш результат: \(correctAnswers)/10"
+            
+            statisticService?.store(correct: correctAnswers, total: questionsAmount)
+            guard var totalAccuracy = statisticService?.totalAccuracy else {
+                return
+            }
+            guard var gamesCount = statisticService?.gamesCount else {
+                return
+            }
+            guard var bestGame = statisticService?.bestGame else {
+                return
+            }
+            var recordString = "\(bestGame.correct)/\(bestGame.total) \(bestGame.dateFormatter())"
+            
+            let message = "Ваш результат: \(correctAnswers)/10 \nКоличество сыгранных квизов: \(gamesCount) \nРекорд: \(recordString) \nСредняя точность: \(totalAccuracy)"
             let viewModel = AlertModel(title: "Раунд окончен", message: message, buttonText: "Начать еще раз", closure: { [weak self] in
                 
                 self?.currentQuestionIndex = 0
