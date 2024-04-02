@@ -16,18 +16,20 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     @IBOutlet private var counterLabel: UILabel!
     @IBOutlet private var noButton: UIButton!
     @IBOutlet private var yesButton: UIButton!
+    @IBOutlet private var activityIndicator: UIActivityIndicatorView!
     
     override func viewDidLoad() {
         
         super.viewDidLoad()
         imageView.layer.cornerRadius = 20
         
-        questionFactory = QuestionFactory(delegate: self)
+        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         alertPresenter = AlertPresenter(delegate: self)
         
-        questionFactory?.requestNextQuestion()
-        
         statisticService = StatisticServiceImplementation()
+        
+        showLoadingIndicator()
+        questionFactory?.loadData()
     }
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
@@ -42,6 +44,15 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
     }
     
+    func didLoadDataFromServer() {
+        activityIndicator.isHidden = true // скрываем индикатор загрузки
+        questionFactory?.requestNextQuestion()
+    }
+
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription)
+    }
+    
     func showAlert(alert: UIAlertController) {
         self.present(alert, animated: true, completion: nil)
     }
@@ -50,12 +61,35 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         return .lightContent
     }
     
+    private func showLoadingIndicator() {
+        activityIndicator.isHidden = false // говорим, что индикатор загрузки не скрыт
+        activityIndicator.startAnimating() // включаем анимацию
+    }
+    
+    private func hideLoadingIndicator() {
+        activityIndicator.isHidden = true
+    }
+    
+    private func showNetworkError(message: String) {
+        hideLoadingIndicator()
+        
+        let viewModel = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", closure: { [weak self] in
+            
+            self?.currentQuestionIndex = 0
+            self?.correctAnswers = 0
+            self?.noButton.isEnabled = true
+            self?.yesButton.isEnabled = true
+            self?.imageView.layer.borderColor = UIColor.clear.cgColor
+            self?.questionFactory?.requestNextQuestion()
+        })
+        alertPresenter?.show(quiz: viewModel)
+    }
+    
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        let questionStep = QuizStepViewModel(
-            image: UIImage(named: model.image) ?? UIImage(),
+        return QuizStepViewModel(
+            image: UIImage(data: model.image) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
-        return questionStep
     }
     
     private func show(quiz step: QuizStepViewModel) {
