@@ -23,7 +23,7 @@ struct MoviesLoader: MoviesLoading {
                     
                     let filteredItems = mostPopularMovies.items.filter { $0.rating != nil }
                                     
-                    // Создаем новую структуру MostPopularMovies с отфильтрованным массивом элементов
+                    
                     let filteredMovies = MostPopularMovies(errorMessage: mostPopularMovies.errorMessage, items: filteredItems)
                     
                     handler(.success(filteredMovies))
