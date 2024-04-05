@@ -93,6 +93,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         currentQuestion = question
         let viewModel = convert(model: question)
         DispatchQueue.main.async { [weak self] in
+            
+            self?.activityIndicator.isHidden = true
             self?.show(quiz: viewModel)
             self?.showImageView()
             self?.showYesButton()
@@ -105,7 +107,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     func didLoadDataFromServer() {
-        activityIndicator.isHidden = true
         questionFactory?.requestNextQuestion()
     }
 
@@ -115,16 +116,28 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     
     func didFailToLoadImage(movie: MostPopularMovie) {
         let viewModel = AlertModel(title: "Ошибка", message: "Не удалось загрузить изображение", buttonText: "Попробовать еще раз", closure: { [weak self] in
-            guard let tryImage = self?.questionFactory?.generateImage(movie: movie) else {return}
+            self?.disableNoButton()
+            self?.disableYesButton()
             
-            self?.imageView.image = UIImage(data: tryImage) ?? UIImage()
-            
+            DispatchQueue.global().async { [weak self] in
+                guard let tryImage = self?.questionFactory?.generateImage(movie: movie) else {return}
+                
+                
+                DispatchQueue.main.async { [weak self] in
+                    self?.imageView.image = UIImage(data: tryImage) ?? UIImage()
+                    self?.enableYesButton()
+                    self?.enableYesButton()
+                }
+            }
         })
         alertPresenter?.show(quiz: viewModel)
     }
     
     func showAlert(alert: UIAlertController) {
-        self.present(alert, animated: true, completion: nil)
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.present(alert, animated: true, completion: nil)
+        }
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -190,8 +203,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
                 
                 self?.currentQuestionIndex = 0
                 self?.correctAnswers = 0
-                self?.noButton.isEnabled = true
-                self?.yesButton.isEnabled = true
                 self?.imageView.layer.borderColor = UIColor.clear.cgColor
                 self?.questionFactory?.requestNextQuestion()
             })
@@ -237,4 +248,3 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
 }
-
