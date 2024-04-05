@@ -32,6 +32,22 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         questionFactory?.loadData()
     }
     
+    func enableYesButton() {
+        yesButton.isEnabled = true
+    }
+    
+    func disableYesButton() {
+        yesButton.isEnabled = false
+    }
+    
+    func enableNoButton() {
+        noButton.isEnabled = true
+    }
+    
+    func disableNoButton() {
+        noButton.isEnabled = false
+    }
+    
     func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else {
             return
@@ -41,11 +57,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         let viewModel = convert(model: question)
         DispatchQueue.main.async { [weak self] in
             self?.show(quiz: viewModel)
+            self?.enableYesButton()
+            self?.enableNoButton()
         }
     }
     
     func didLoadDataFromServer() {
-        activityIndicator.isHidden = true 
+        activityIndicator.isHidden = true
         questionFactory?.requestNextQuestion()
     }
 
@@ -62,6 +80,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     private func showLoadingIndicator() {
+        disableYesButton()
+        disableNoButton()
         activityIndicator.isHidden = false // говорим, что индикатор загрузки не скрыт
         activityIndicator.startAnimating() // включаем анимацию
     }
@@ -80,7 +100,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             self?.noButton.isEnabled = true
             self?.yesButton.isEnabled = true
             self?.imageView.layer.borderColor = UIColor.clear.cgColor
-            self?.questionFactory?.requestNextQuestion()
+            self?.questionFactory?.loadData()
         })
         alertPresenter?.show(quiz: viewModel)
     }
@@ -126,8 +146,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             alertPresenter?.show(quiz: viewModel)
             
         } else {
-            noButton.isEnabled = true
-            yesButton.isEnabled = true
             self.imageView.layer.borderColor = UIColor.clear.cgColor
             currentQuestionIndex += 1
             
