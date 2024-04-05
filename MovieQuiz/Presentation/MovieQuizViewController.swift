@@ -21,6 +21,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     override func viewDidLoad() {
         
         super.viewDidLoad()
+        hideImageView()
+        hideNoButton()
+        hideYesButton()
+        hideTextLabel()
+        
         imageView.layer.cornerRadius = 20
         
         questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
@@ -30,6 +35,38 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         
         showLoadingIndicator()
         questionFactory?.loadData()
+    }
+    
+    func hideTextLabel() {
+        textLabel.alpha = 0.0
+    }
+    
+    func showTextLabel() {
+        textLabel.alpha = 1.0
+    }
+    
+    func hideImageView() {
+        imageView.alpha = 0.0
+    }
+    
+    func showImageView() {
+        imageView.alpha = 1.0
+    }
+    
+    func hideYesButton() {
+        yesButton.alpha = 0.0
+    }
+    
+    func hideNoButton() {
+        noButton.alpha = 0.0
+    }
+    
+    func showYesButton() {
+        yesButton.alpha = 1.0
+    }
+    
+    func showNoButton() {
+        noButton.alpha = 1.0
     }
     
     func enableYesButton() {
@@ -57,8 +94,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         let viewModel = convert(model: question)
         DispatchQueue.main.async { [weak self] in
             self?.show(quiz: viewModel)
+            self?.showImageView()
+            self?.showYesButton()
+            self?.showNoButton()
             self?.enableYesButton()
             self?.enableNoButton()
+            self?.showTextLabel()
+            
         }
     }
     
