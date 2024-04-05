@@ -77,8 +77,10 @@ final class QuestionFactory: QuestionFactoryProtocol {
             do {
                 imageData = try Data(contentsOf: movie.resizedImageURL)
             } catch {
-                print("Failed to load image")
-            } 
+                DispatchQueue.main.async { [weak self] in
+                    self?.delegate?.didFailToLoadImage(movie: movie)
+                }
+            }
             
             let rating = Float(movie.rating) ?? 0
             
@@ -99,5 +101,19 @@ final class QuestionFactory: QuestionFactoryProtocol {
     init(moviesLoader: MoviesLoading, delegate: QuestionFactoryDelegate?) {
             self.moviesLoader = moviesLoader
             self.delegate = delegate
+    }
+    
+    func generateImage(movie: MostPopularMovie) -> Data {
+        var imageData = Data()
+       
+        do {
+            imageData = try Data(contentsOf: movie.resizedImageURL)
+        } catch {
+            DispatchQueue.main.async { [weak self] in
+                self?.delegate?.didFailToLoadImage(movie: movie)
+            }
+        }
+        
+        return imageData
     }
 }

@@ -113,6 +113,16 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         showNetworkError(message: error.localizedDescription)
     }
     
+    func didFailToLoadImage(movie: MostPopularMovie) {
+        let viewModel = AlertModel(title: "Ошибка", message: "Не удалось загрузить изображение", buttonText: "Попробовать еще раз", closure: { [weak self] in
+            guard let tryImage = self?.questionFactory?.generateImage(movie: movie) else {return}
+            
+            self?.imageView.image = UIImage(data: tryImage) ?? UIImage()
+            
+        })
+        alertPresenter?.show(quiz: viewModel)
+    }
+    
     func showAlert(alert: UIAlertController) {
         self.present(alert, animated: true, completion: nil)
     }
