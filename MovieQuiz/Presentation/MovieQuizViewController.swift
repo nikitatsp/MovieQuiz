@@ -37,51 +37,51 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         questionFactory?.loadData()
     }
     
-    func hideTextLabel() {
+    private func hideTextLabel() {
         textLabel.alpha = 0.0
     }
     
-    func showTextLabel() {
+    private func showTextLabel() {
         textLabel.alpha = 1.0
     }
     
-    func hideImageView() {
+    private func hideImageView() {
         imageView.alpha = 0.0
     }
     
-    func showImageView() {
+    private func showImageView() {
         imageView.alpha = 1.0
     }
     
-    func hideYesButton() {
+     private func hideYesButton() {
         yesButton.alpha = 0.0
     }
     
-    func hideNoButton() {
+    private func hideNoButton() {
         noButton.alpha = 0.0
     }
     
-    func showYesButton() {
+    private func showYesButton() {
         yesButton.alpha = 1.0
     }
     
-    func showNoButton() {
+    private func showNoButton() {
         noButton.alpha = 1.0
     }
     
-    func enableYesButton() {
+    private func enableYesButton() {
         yesButton.isEnabled = true
     }
     
-    func disableYesButton() {
+    private func disableYesButton() {
         yesButton.isEnabled = false
     }
     
-    func enableNoButton() {
+    private func enableNoButton() {
         noButton.isEnabled = true
     }
     
-    func disableNoButton() {
+    private func disableNoButton() {
         noButton.isEnabled = false
     }
     
