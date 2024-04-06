@@ -16,18 +16,73 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     @IBOutlet private var counterLabel: UILabel!
     @IBOutlet private var noButton: UIButton!
     @IBOutlet private var yesButton: UIButton!
+    @IBOutlet private var activityIndicator: UIActivityIndicatorView!
     
     override func viewDidLoad() {
         
         super.viewDidLoad()
+        hideImageView()
+        hideNoButton()
+        hideYesButton()
+        hideTextLabel()
+        
         imageView.layer.cornerRadius = 20
         
-        questionFactory = QuestionFactory(delegate: self)
+        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         alertPresenter = AlertPresenter(delegate: self)
         
-        questionFactory?.requestNextQuestion()
-        
         statisticService = StatisticServiceImplementation()
+        
+        showLoadingIndicator()
+        questionFactory?.loadData()
+    }
+    
+    private func hideTextLabel() {
+        textLabel.alpha = 0.0
+    }
+    
+    private func showTextLabel() {
+        textLabel.alpha = 1.0
+    }
+    
+    private func hideImageView() {
+        imageView.alpha = 0.0
+    }
+    
+    private func showImageView() {
+        imageView.alpha = 1.0
+    }
+    
+     private func hideYesButton() {
+        yesButton.alpha = 0.0
+    }
+    
+    private func hideNoButton() {
+        noButton.alpha = 0.0
+    }
+    
+    private func showYesButton() {
+        yesButton.alpha = 1.0
+    }
+    
+    private func showNoButton() {
+        noButton.alpha = 1.0
+    }
+    
+    private func enableYesButton() {
+        yesButton.isEnabled = true
+    }
+    
+    private func disableYesButton() {
+        yesButton.isEnabled = false
+    }
+    
+    private func enableNoButton() {
+        noButton.isEnabled = true
+    }
+    
+    private func disableNoButton() {
+        noButton.isEnabled = false
     }
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
@@ -38,24 +93,88 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         currentQuestion = question
         let viewModel = convert(model: question)
         DispatchQueue.main.async { [weak self] in
+            
+            self?.activityIndicator.isHidden = true
             self?.show(quiz: viewModel)
+            self?.showImageView()
+            self?.showYesButton()
+            self?.showNoButton()
+            self?.enableYesButton()
+            self?.enableNoButton()
+            self?.showTextLabel()
+            
         }
     }
     
+    func didLoadDataFromServer() {
+        questionFactory?.requestNextQuestion()
+    }
+
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription)
+    }
+    
+    func didFailToLoadImage(movie: MostPopularMovie) {
+        let viewModel = AlertModel(title: "Ошибка", message: "Не удалось загрузить изображение", buttonText: "Попробовать еще раз", closure: { [weak self] in
+            self?.disableNoButton()
+            self?.disableYesButton()
+            
+            DispatchQueue.global().async { [weak self] in
+                guard let tryImage = self?.questionFactory?.generateImage(movie: movie) else {return}
+                
+                
+                DispatchQueue.main.async { [weak self] in
+                    self?.imageView.image = UIImage(data: tryImage) ?? UIImage()
+                    self?.enableYesButton()
+                    self?.enableYesButton()
+                }
+            }
+        })
+        alertPresenter?.show(quiz: viewModel)
+    }
+    
     func showAlert(alert: UIAlertController) {
-        self.present(alert, animated: true, completion: nil)
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.present(alert, animated: true, completion: nil)
+        }
     }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
     
+    private func showLoadingIndicator() {
+        disableYesButton()
+        disableNoButton()
+        activityIndicator.isHidden = false // говорим, что индикатор загрузки не скрыт
+        activityIndicator.startAnimating() // включаем анимацию
+    }
+    
+    private func hideLoadingIndicator() {
+        activityIndicator.isHidden = true
+    }
+    
+    private func showNetworkError(message: String) {
+        hideLoadingIndicator()
+        
+        let viewModel = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", closure: { [weak self] in
+            
+            self?.currentQuestionIndex = 0
+            self?.correctAnswers = 0
+            self?.noButton.isEnabled = true
+            self?.yesButton.isEnabled = true
+            self?.imageView.layer.borderColor = UIColor.clear.cgColor
+            self?.questionFactory?.loadData()
+        })
+        alertPresenter?.show(quiz: viewModel)
+    }
+    
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        let questionStep = QuizStepViewModel(
-            image: UIImage(named: model.image) ?? UIImage(),
+        return QuizStepViewModel(
+            image: UIImage(data: model.image) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
-        return questionStep
     }
     
     private func show(quiz step: QuizStepViewModel) {
@@ -84,16 +203,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
                 
                 self?.currentQuestionIndex = 0
                 self?.correctAnswers = 0
-                self?.noButton.isEnabled = true
-                self?.yesButton.isEnabled = true
                 self?.imageView.layer.borderColor = UIColor.clear.cgColor
                 self?.questionFactory?.requestNextQuestion()
             })
             alertPresenter?.show(quiz: viewModel)
             
         } else {
-            noButton.isEnabled = true
-            yesButton.isEnabled = true
             self.imageView.layer.borderColor = UIColor.clear.cgColor
             currentQuestionIndex += 1
             
@@ -133,4 +248,3 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
 }
-
