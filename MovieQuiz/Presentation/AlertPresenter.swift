@@ -20,6 +20,8 @@ final class AlertPresenter: AlertPresenterProtocol {
         
         alert.addAction(action)
         
+        alert.view.accessibilityIdentifier = result.accessibilityIdentifier
+        
         delegate?.showAlert(alert: alert)
     }
 

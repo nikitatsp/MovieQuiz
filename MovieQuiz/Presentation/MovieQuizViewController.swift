@@ -2,13 +2,12 @@ import UIKit
 
 final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, AlertPresenterDelegate {
     
-    private let questionsAmount: Int = 10
+    private let presenter = MovieQuizPresenter()
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenterProtocol?
     private var statisticService: StatisticService?
     
-    private var currentQuestionIndex = 0
     private var correctAnswers = 0
     
     @IBOutlet private var imageView: UIImageView!
@@ -91,7 +90,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
 
         currentQuestion = question
-        let viewModel = convert(model: question)
+        let viewModel = presenter.convert(model: question)
         DispatchQueue.main.async { [weak self] in
             
             self?.activityIndicator.isHidden = true
@@ -115,7 +114,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     func didFailToLoadImage(movie: MostPopularMovie) {
-        let viewModel = AlertModel(title: "Ошибка", message: "Не удалось загрузить изображение", buttonText: "Попробовать еще раз", closure: { [weak self] in
+        let viewModel = AlertModel(title: "Ошибка", message: "Не удалось загрузить изображение", buttonText: "Попробовать еще раз", accessibilityIdentifier: "FailedLoadImageAlert", closure: { [weak self] in
             self?.disableNoButton()
             self?.disableYesButton()
             
@@ -158,9 +157,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private func showNetworkError(message: String) {
         hideLoadingIndicator()
         
-        let viewModel = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", closure: { [weak self] in
+        let viewModel = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", accessibilityIdentifier: "ShowNetworkErrorAlert", closure: { [weak self] in
             
-            self?.currentQuestionIndex = 0
+            self?.presenter.resetQuestionIndex()
             self?.correctAnswers = 0
             self?.noButton.isEnabled = true
             self?.yesButton.isEnabled = true
@@ -170,13 +169,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         alertPresenter?.show(quiz: viewModel)
     }
     
-    private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        return QuizStepViewModel(
-            image: UIImage(data: model.image) ?? UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
-    }
-    
     private func show(quiz step: QuizStepViewModel) {
       imageView.image = step.image
       textLabel.text = step.question
@@ -184,9 +176,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     private func showNextQuestionOrResults() {
-        if currentQuestionIndex == questionsAmount - 1 {
+        if presenter.isLastQuestion() {
             
-            statisticService?.store(correct: correctAnswers, total: questionsAmount)
+            statisticService?.store(correct: correctAnswers, total: presenter.questionsAmount)
             guard let totalAccuracy = statisticService?.totalAccuracy else {
                 return
             }
@@ -199,9 +191,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             let recordString = "\(bestGame.correct)/\(bestGame.total) (\(bestGame.dateFormatter()))"
             
             let message = "Ваш результат: \(correctAnswers)/10 \nКоличество сыгранных квизов: \(gamesCount) \nРекорд: \(recordString) \nСредняя точность: \(NSString(format:"%.2f", totalAccuracy))%"
-            let viewModel = AlertModel(title: "Раунд окончен", message: message, buttonText: "Начать еще раз", closure: { [weak self] in
+            let viewModel = AlertModel(title: "Раунд окончен", message: message, buttonText: "Начать еще раз", accessibilityIdentifier: "GameResults", closure: { [weak self] in
                 
-                self?.currentQuestionIndex = 0
+                self?.presenter.resetQuestionIndex()
                 self?.correctAnswers = 0
                 self?.imageView.layer.borderColor = UIColor.clear.cgColor
                 self?.questionFactory?.requestNextQuestion()
@@ -210,7 +202,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             
         } else {
             self.imageView.layer.borderColor = UIColor.clear.cgColor
-            currentQuestionIndex += 1
+            presenter.switchToNextQuestion()
             
             questionFactory?.requestNextQuestion()
         }
