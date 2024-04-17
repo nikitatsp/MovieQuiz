@@ -14,12 +14,13 @@ final class MovieQuizPresenter {
             currentQuestionIndex == questionsAmount - 1
     }
         
-    func resetQuestionIndex() {
-            currentQuestionIndex = 0
+    func restartGame() {
+        currentQuestionIndex = 0
+        correctAnswers = 0
     }
         
     func switchToNextQuestion() {
-            currentQuestionIndex += 1
+        currentQuestionIndex += 1
     }
     
     func convert(model: QuizQuestion) -> QuizStepViewModel {
@@ -68,7 +69,7 @@ final class MovieQuizPresenter {
             let message = "Ваш результат: \(correctAnswers)/10 \nКоличество сыгранных квизов: \(gamesCount) \nРекорд: \(recordString) \nСредняя точность: \(NSString(format:"%.2f", totalAccuracy))%"
             let viewModel = AlertModel(title: "Раунд окончен", message: message, buttonText: "Начать еще раз", accessibilityIdentifier: "GameResults", closure: { [weak self] in
                 
-                self?.resetQuestionIndex()
+                self?.restartGame()
                 self?.correctAnswers = 0
                 self?.viewController?.hideBorder()
                 self?.questionFactory?.requestNextQuestion()
@@ -100,4 +101,10 @@ final class MovieQuizPresenter {
         
         viewController?.showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
+    
+    func didAnswer(isCorrectAnswer: Bool) {
+            if isCorrectAnswer {
+                correctAnswers += 1
+            }
+        }
 }

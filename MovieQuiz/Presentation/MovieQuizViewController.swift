@@ -7,8 +7,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private var alertPresenter: AlertPresenterProtocol?
     private var statisticService: StatisticService?
     
-    private var correctAnswers = 0
-    
     @IBOutlet private var imageView: UIImageView!
     @IBOutlet private var textLabel: UILabel!
     @IBOutlet private var counterLabel: UILabel!
@@ -146,8 +144,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         
         let viewModel = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", accessibilityIdentifier: "ShowNetworkErrorAlert", closure: { [weak self] in
             
-            self?.presenter.resetQuestionIndex()
-            self?.correctAnswers = 0
+            self?.presenter.restartGame()
+            self?.presenter.correctAnswers = 0
             self?.noButton.isEnabled = true
             self?.yesButton.isEnabled = true
             self?.imageView.layer.borderColor = UIColor.clear.cgColor
@@ -168,10 +166,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     
     
     func showAnswerResult(isCorrect: Bool) {
+        presenter.didAnswer(isCorrectAnswer: isCorrect)
         
-        if isCorrect {
-            correctAnswers += 1
-        }
         noButton.isEnabled = false
         yesButton.isEnabled = false
         imageView.layer.masksToBounds = true
@@ -179,7 +175,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             
-            self.presenter.correctAnswers = self.correctAnswers
+            self.presenter.correctAnswers = self.presenter.correctAnswers
             self.presenter.questionFactory = self.questionFactory
             self.presenter.statisticService = self.statisticService
             self.presenter.showNextQuestionOrResults()
