@@ -3,6 +3,9 @@ import UIKit
 final class MovieQuizPresenter {
     var currentQuestion: QuizQuestion?
     weak var viewController: MovieQuizViewController?
+    var correctAnswers: Int = 0
+    var questionFactory: QuestionFactoryProtocol?
+    var statisticService: StatisticService?
     
     let questionsAmount: Int = 10
     private var currentQuestionIndex: Int = 0
@@ -24,6 +27,60 @@ final class MovieQuizPresenter {
             image: UIImage(data: model.image) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
+    }
+    
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+            return
+        }
+
+        currentQuestion = question
+        let viewModel = convert(model: question)
+        DispatchQueue.main.async { [weak self] in
+            
+            self?.viewController?.hideLoadingIndicator()
+            self?.viewController?.show(quiz: viewModel)
+            self?.viewController?.showImageView()
+            self?.viewController?.showYesButton()
+            self?.viewController?.showNoButton()
+            self?.viewController?.enableYesButton()
+            self?.viewController?.enableNoButton()
+            self?.viewController?.showTextLabel()
+            
+        }
+    }
+    
+    func showNextQuestionOrResults() {
+        if isLastQuestion() {
+            
+            statisticService?.store(correct: correctAnswers, total: questionsAmount)
+            guard let totalAccuracy = statisticService?.totalAccuracy else {
+                return
+            }
+            guard let gamesCount = statisticService?.gamesCount else {
+                return
+            }
+            guard let bestGame = statisticService?.bestGame else {
+                return
+            }
+            let recordString = "\(bestGame.correct)/\(bestGame.total) (\(bestGame.dateFormatter()))"
+            
+            let message = "Ваш результат: \(correctAnswers)/10 \nКоличество сыгранных квизов: \(gamesCount) \nРекорд: \(recordString) \nСредняя точность: \(NSString(format:"%.2f", totalAccuracy))%"
+            let viewModel = AlertModel(title: "Раунд окончен", message: message, buttonText: "Начать еще раз", accessibilityIdentifier: "GameResults", closure: { [weak self] in
+                
+                self?.resetQuestionIndex()
+                self?.correctAnswers = 0
+                self?.viewController?.hideBorder()
+                self?.questionFactory?.requestNextQuestion()
+            })
+            viewController?.provideDataToAlert(viewModel: viewModel)
+            
+        } else {
+            self.viewController?.hideBorder()
+            self.switchToNextQuestion()
+            
+            questionFactory?.requestNextQuestion()
+        }
     }
     
     func yesButtonClicked() {
