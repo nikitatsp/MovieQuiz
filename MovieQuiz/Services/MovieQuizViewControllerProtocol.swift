@@ -1,6 +1,11 @@
 import UIKit
 
-protocol MovieQuizViewControllerProtocol {
+protocol MovieQuizViewControllerProtocol: AnyObject {
+    
+    var imageView: UIImageView! {get set}
+    
+    var alertPresenter: AlertPresenterProtocol? {get set}
+    
     func hideBorder()
     
     func hideTextLabel()
