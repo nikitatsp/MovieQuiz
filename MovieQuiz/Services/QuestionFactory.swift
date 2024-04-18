@@ -58,6 +58,7 @@ final class QuestionFactory: QuestionFactoryProtocol {
                 case .success(let mostPopularMovies):
                     self.movies = mostPopularMovies.items
                     self.delegate?.didLoadDataFromServer()
+                    print(self.movies.count)
                 case .failure(let error):
                     self.delegate?.didFailToLoadData(with: error)
                 }
