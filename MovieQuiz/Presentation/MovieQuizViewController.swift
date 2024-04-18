@@ -95,8 +95,8 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate, M
     func showLoadingIndicator() {
         disableYesButton()
         disableNoButton()
-        activityIndicator.isHidden = false // говорим, что индикатор загрузки не скрыт
-        activityIndicator.startAnimating() // включаем анимацию
+        activityIndicator.isHidden = false 
+        activityIndicator.startAnimating()
     }
     
     func hideLoadingIndicator() {
