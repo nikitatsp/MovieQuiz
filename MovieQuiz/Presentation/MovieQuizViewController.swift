@@ -1,13 +1,11 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, AlertPresenterDelegate {
+final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
     
-    private let presenter = MovieQuizPresenter()
-    private var questionFactory: QuestionFactoryProtocol?
-    private var alertPresenter: AlertPresenterProtocol?
-    private var statisticService: StatisticService?
+    private var presenter: MovieQuizPresenter!
+    var alertPresenter: AlertPresenterProtocol?
     
-    @IBOutlet private var imageView: UIImageView!
+    @IBOutlet var imageView: UIImageView!
     @IBOutlet private var textLabel: UILabel!
     @IBOutlet private var counterLabel: UILabel!
     @IBOutlet private var noButton: UIButton!
@@ -24,14 +22,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         
         imageView.layer.cornerRadius = 20
         
-        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+        presenter = MovieQuizPresenter(viewController: self)
         alertPresenter = AlertPresenter(delegate: self)
-        presenter.viewController = self
-        
-        statisticService = StatisticServiceImplementation()
         
         showLoadingIndicator()
-        questionFactory?.loadData()
     }
     
     func hideBorder() {
@@ -86,36 +80,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         noButton.isEnabled = false
     }
     
-    func didReceiveNextQuestion(question: QuizQuestion?) {
-        presenter.didReceiveNextQuestion(question: question)
-    }
-    
-    func didLoadDataFromServer() {
-        questionFactory?.requestNextQuestion()
-    }
-
-    func didFailToLoadData(with error: Error) {
-        showNetworkError(message: error.localizedDescription)
-    }
-    
-    func didFailToLoadImage(movie: MostPopularMovie) {
-        let viewModel = AlertModel(title: "Ошибка", message: "Не удалось загрузить изображение", buttonText: "Попробовать еще раз", accessibilityIdentifier: "FailedLoadImageAlert", closure: { [weak self] in
-            self?.disableNoButton()
-            self?.disableYesButton()
-            
-            DispatchQueue.global().async { [weak self] in
-                guard let tryImage = self?.questionFactory?.generateImage(movie: movie) else {return}
-                
-                
-                DispatchQueue.main.async { [weak self] in
-                    self?.imageView.image = UIImage(data: tryImage) ?? UIImage()
-                    self?.enableYesButton()
-                    self?.enableYesButton()
-                }
-            }
-        })
-        alertPresenter?.show(quiz: viewModel)
-    }
     
     func showAlert(alert: UIAlertController) {
         
@@ -139,20 +103,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         activityIndicator.isHidden = true
     }
     
-    private func showNetworkError(message: String) {
-        hideLoadingIndicator()
-        
-        let viewModel = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", accessibilityIdentifier: "ShowNetworkErrorAlert", closure: { [weak self] in
-            
-            self?.presenter.restartGame()
-            self?.presenter.correctAnswers = 0
-            self?.noButton.isEnabled = true
-            self?.yesButton.isEnabled = true
-            self?.imageView.layer.borderColor = UIColor.clear.cgColor
-            self?.questionFactory?.loadData()
-        })
-        alertPresenter?.show(quiz: viewModel)
-    }
     
     func show(quiz step: QuizStepViewModel) {
       imageView.image = step.image
@@ -160,26 +110,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
       counterLabel.text = step.questionNumber
     }
     
-    func provideDataToAlert(viewModel: AlertModel) {
-        alertPresenter?.show(quiz: viewModel)
-    }
     
-    
-    func showAnswerResult(isCorrect: Bool) {
-        presenter.didAnswer(isCorrectAnswer: isCorrect)
-        
-        noButton.isEnabled = false
-        yesButton.isEnabled = false
-        imageView.layer.masksToBounds = true
-        imageView.layer.borderWidth = 8
-        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            
-            self.presenter.correctAnswers = self.presenter.correctAnswers
-            self.presenter.questionFactory = self.questionFactory
-            self.presenter.statisticService = self.statisticService
-            self.presenter.showNextQuestionOrResults()
-            }
+    func highlightImageBorder(isCorrectAnswer: Bool) {
+            imageView.layer.masksToBounds = true
+            imageView.layer.borderWidth = 8
+            imageView.layer.borderColor = isCorrectAnswer ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
     }
     
     @IBAction private func yesButtonClicked(_ sender: Any) {

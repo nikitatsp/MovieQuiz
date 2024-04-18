@@ -1,6 +1,7 @@
 import UIKit
 
-final class MovieQuizPresenter {
+final class MovieQuizPresenter: QuestionFactoryDelegate {
+    
     var currentQuestion: QuizQuestion?
     weak var viewController: MovieQuizViewController?
     var correctAnswers: Int = 0
@@ -9,6 +10,58 @@ final class MovieQuizPresenter {
     
     let questionsAmount: Int = 10
     private var currentQuestionIndex: Int = 0
+    
+    init(viewController: MovieQuizViewController) {
+            self.viewController = viewController
+            statisticService = StatisticServiceImplementation()
+            questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+            questionFactory?.loadData()
+            viewController.showLoadingIndicator()
+    }
+    
+    func didLoadDataFromServer() {
+        questionFactory?.requestNextQuestion()
+    }
+
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription)
+    }
+    
+    func didFailToLoadImage(movie: MostPopularMovie) {
+        let viewModel = AlertModel(title: "Ошибка", message: "Не удалось загрузить изображение", buttonText: "Попробовать еще раз", accessibilityIdentifier: "FailedLoadImageAlert", closure: { [weak self] in
+            self?.viewController?.disableNoButton()
+            self?.viewController?.disableYesButton()
+            
+            DispatchQueue.global().async { [weak self] in
+                guard let tryImage = self?.questionFactory?.generateImage(movie: movie) else {return}
+                
+                
+                DispatchQueue.main.async { [weak self] in
+                    self?.viewController?.imageView.image = UIImage(data: tryImage) ?? UIImage()
+                    self?.viewController?.enableYesButton()
+                    self?.viewController?.enableYesButton()
+                }
+            }
+        })
+        viewController?.alertPresenter?.show(quiz: viewModel)
+    }
+    
+    func showNetworkError(message: String) {
+        viewController?.hideLoadingIndicator()
+        
+        let viewModel = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", accessibilityIdentifier: "ShowNetworkErrorAlert", closure: { [weak self] in
+            
+            self?.restartGame()
+            self?.correctAnswers = 0
+            self?.viewController?.enableNoButton()
+            self?.viewController?.enableYesButton()
+            self?.viewController?.hideBorder()
+            self?.questionFactory?.loadData()
+        })
+            viewController?.alertPresenter?.show(quiz: viewModel)
+    }
+    
+    
         
     func isLastQuestion() -> Bool {
             currentQuestionIndex == questionsAmount - 1
@@ -51,6 +104,20 @@ final class MovieQuizPresenter {
         }
     }
     
+    func showAnswerResult(isCorrect: Bool) {
+        didAnswer(isCorrectAnswer: isCorrect)
+        
+        viewController?.disableNoButton()
+        viewController?.disableYesButton()
+        
+        viewController?.highlightImageBorder(isCorrectAnswer: isCorrect)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            
+            self?.showNextQuestionOrResults()
+            }
+    }
+    
     func showNextQuestionOrResults() {
         if isLastQuestion() {
             
@@ -74,7 +141,7 @@ final class MovieQuizPresenter {
                 self?.viewController?.hideBorder()
                 self?.questionFactory?.requestNextQuestion()
             })
-            viewController?.provideDataToAlert(viewModel: viewModel)
+            viewController?.alertPresenter?.show(quiz: viewModel)
             
         } else {
             self.viewController?.hideBorder()
@@ -99,7 +166,7 @@ final class MovieQuizPresenter {
         
         let givenAnswer = isYes
         
-        viewController?.showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
     
     func didAnswer(isCorrectAnswer: Bool) {
